@@ -10,8 +10,9 @@ app = Flask(__name__)
 def detectImage(img_path):
     img_original = cv2.imread(f'original/{img_path}')
     img = cv2.imread(f'original/{img_path}',0)
-    blur = cv2.GaussianBlur(img,(11,11),0)
-    edges = cv2.Canny(blur, 40, 250)
+    # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    blur = cv2.GaussianBlur(img,(5,5),0)
+    edges = cv2.Canny(blur, 50, 150)
     dilated = cv2.dilate(edges, (1,1), iterations = 2)
 
     # FONT TEXT
@@ -22,7 +23,10 @@ def detectImage(img_path):
     thickness = 3
 
     # FIND CONTOUR
-    (cnt,_) = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # CIRCLE
+    # (cnt,_) = cv2.findContours(dilated.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # HEXAGONAL
+    (cnt,_) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # TEXT IN IMAGE
     # print("Terdapat {} sarang dalam gambar".format(len(cnt)))
@@ -46,22 +50,25 @@ def detectImage(img_path):
     dilated_resize = cv2.resize(dilated, (600, 600))
 
     # SHOW IMAGE
-    original = cv2.imshow('Original', img_original_resize)
-    original = cv2.imshow('Find Object Contur', img_resize)
-    sarang = cv2.imshow("Sarang", dilated_resize)
+    # original = cv2.imshow('Original', img_original_resize)
+    # original = cv2.imshow('Find Object Contur', img_resize)
+    # sarang = cv2.imshow("Sarang", dilated_resize)
 
     # SAVE IMAGE
-    print(img_path)
+    print("Upload Successfully")
     cv2.imwrite(f'result/{img_path}', img_original_resize)
     cv2.imwrite(f'filter/{img_path}', img_resize)
     cv2.imwrite(f'contour/{img_path}', dilated_resize)
+    print("Save Image Processing Successfully")
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     
+    many_nests = round(len(cnt) / 2)
+
     return {'filename': img_path,
             'status': 'success',
-            'many_nests': len(cnt),
+            'many_nests': many_nests,
             'original': f'preview/original/{img_path}',
             'contour': f'preview/contour/{img_path}',
             'filter': f'preview/filter/{img_path}',
@@ -74,7 +81,7 @@ def random_string(length):
    return ''.join(random.choice(letters) for i in range(length))
 
 
-@app.route('/upload', methods=['POST'])
+@app.route('/api/upload', methods=['POST'])
 def upload_file():
     f = request.files['file']
 
